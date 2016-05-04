@@ -1,0 +1,9 @@
+<div id="menu"></div>
+<div class="container text-center content-centered">
+	<h3>Bienvenido <span id="full_name"></span></h3>
+</div>
+<script>
+	data = get_data_local();
+	$('#full_name').append(data['full_name']);
+	$('#menu').load('menu.html');
+</script>

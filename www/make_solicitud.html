@@ -1,0 +1,110 @@
+<div id="menu"></div>
+<div class="container text-center content-centered">
+	<h3>Haz una solicitud</h3>
+	<br>
+	<form action="" class="text-left">
+		<div class="form-group">
+			<label for="peso">Peso:</label>
+			<input type="text" id="peso" class="form-control" pattern="[0-9]{1,9}" data-required>
+		</div>
+		<div class="form-group">
+			<label for="material">Material:</label>
+			<select name="material" id="material" class="form-control">
+				<option value="">Seleccione un material</option>
+			</select>
+		</div>
+		<div id="bodegas"></div>
+		<div class="form-group text-center">
+			<input type="submit" value="Enviar" class="btn btn-success btn-lg" id="solicitar" disabled />
+		</div>
+	</form>
+</div>
+<script>
+	load_material();
+	url_serve = u_serve();
+	var bodega = 0;
+	data = get_data_local();
+	var newApiString = data['username']+":"+data['key_user'];
+	$('#menu').load('menu.html');
+	$(document).on("click", '.select', function(){
+		$('.card').removeClass('selected');
+		var id = $(this).attr('id');
+		$('#cont-'+id).addClass('selected');
+		bodega = id;
+		$('.btn').prop("disabled", false);
+	});
+	$(document).on("click", '#solicitar', function(event){
+		da = get_data_local()
+		var endPoint = url_serve+"/send_solicitud/";
+		var data = JSON.stringify({
+			'peso_aprox': peso.val(),
+			'bodega_material': bodega,
+			'username': da['username']
+		});
+		$.ajax({
+			type: "POST",
+			url: endPoint,
+			data: data,
+			contentType: 'application/json',
+			dataType: 'json',
+			success: function(response){
+				console.log(response.objects);
+			},
+			error: function(data){
+				alert("Ha ocurrido un error");
+				console.log(data);
+			},
+			beforeSend: function(xhr){
+				xhr.setRequestHeader("Authorization", "ApiKey "+newApiString)
+			},
+		});
+		return false;
+	});
+	$(document).on("change", '#material', function(){
+		bodega = 0;
+		$('.btn').prop("disabled", true);
+		peso = $('#peso');
+		material = $('#material');
+		if(peso.val() != ''){
+			var endPoint = url_serve+"/find_bodega/";
+			var data = {
+				material: $(this).val()
+			};
+			console.log(data);
+			$.ajax({
+				type: "GET",
+				url: endPoint,
+				data: data,
+				contentType: "application/json",
+				success: function(response){
+					$('#bodegas').empty();
+					$.each(response.objects[0].response, function(key, value){
+						$('#bodegas').append(
+							"<a id='"+value.pk+"' class='select'>"+
+								"<div id='cont-"+value.pk+"' class='card'>"+
+									"<h5><strong>Bodega:</strong> "+value.bodega+"</h5>"+
+									"<p><strong>Dirección:</strong> "+value.bodega_dir+"</p>"+
+									"<p><strong>Precio aproximadoa a pagar:</strong> "+get_value(value.precio)+"</p>"+
+								"</div>"+
+							"</a>"
+						);
+					});
+					console.log(response.objects[0].response);
+				},
+				error: function(data){
+					alert("Ha ocurrido un error");
+				},
+				beforeSend: function(xhr){
+					xhr.setRequestHeader("Authorization", "ApiKey "+newApiString)
+				},
+			});
+		}else{
+			alert('Ingresa primero el peso aproximado');
+			material.val('');
+			peso.focus();
+		}
+	});
+	function get_value(precio){
+		return precio * parseInt(peso.val());
+	}
+</script>
